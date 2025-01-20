@@ -28,7 +28,7 @@ fn main() {
         .unwrap();
         match k.as_ref().unwrap() {
             Key::Char('q') => break,
-            _ => println!("{:?}", k),
+            _ => println!("{:?}", k.unwrap()),
         }
         stdout.flush().unwrap();
     }
