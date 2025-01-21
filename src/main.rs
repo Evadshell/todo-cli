@@ -68,8 +68,8 @@ fn main() {
         "muheuehueh".to_string(),
     ];
     let mut quit = false;
-    let mut todo_curr: usize = 1;
-    let mut dones = Vec::<String>::new();
+    let mut todo_curr: usize = 0;
+    let mut dones :Vec<String> = vec!["heheh".to_string(), "dsbds".to_string()];
     let mut ui = Ui::default();
     let mut done_curr: usize = 0;
     while !quit {
@@ -93,12 +93,12 @@ fn main() {
             }
             ui.end_list();
 
-            // ui.label("----------------------------------",REGULAR_PAIR);
-            // ui.begin_list(done_curr);
-            // for (index, done) in dones.iter().enumerate() {
-            //     ui.list_element(done, index);
-            // }
-            // ui.end_list();
+            ui.label("----------------------------------", REGULAR_PAIR);
+            ui.begin_list(done_curr + 6969);
+            for (index, done) in dones.iter().enumerate() {
+                ui.list_element(done, index + 6969);
+            }
+            ui.end_list();
         }
         ui.end();
         refresh();
