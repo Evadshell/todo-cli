@@ -4,6 +4,7 @@ use ncurses::*;
 const REGULAR_PAIR: i16 = 0;
 const HIGHLIGHT_PAIR: i16 = 1;
 type Id = usize;
+
 #[derive(Default)]
 struct Ui {
     list_curr: Option<Id>,
@@ -76,9 +77,10 @@ fn main() {
         // addstr("TODO :");
         ui.begin(0, 0);
         {
+            ui.label("TODO ::", REGULAR_PAIR);
             ui.begin_list(todo_curr);
             for (index, todo) in todos.iter().enumerate() {
-                ui.list_element(todo, index);
+                ui.list_element(&format!("- [ ] {}",todo), index);
                 // let pair = {
                 //     if todo_curr == index {
                 //         HIGHLIGHT_PAIR
@@ -94,9 +96,11 @@ fn main() {
             ui.end_list();
 
             ui.label("----------------------------------", REGULAR_PAIR);
+
+            ui.label("DONE ::", REGULAR_PAIR);
             ui.begin_list(done_curr + 6969);
             for (index, done) in dones.iter().enumerate() {
-                ui.list_element(done, index + 6969);
+                ui.list_element(&format!(" - [x] {}",done), index + 6969);
             }
             ui.end_list();
         }
