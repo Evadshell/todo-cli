@@ -34,7 +34,7 @@ impl Ui {
         self.list_curr = Some(id);
         // todo!()
     }
-    fn list_element(&mut self, label: &str, id: Id) {
+    fn list_element(&mut self, label: &str, id: Id) -> bool {
         let id_curr = self
             .list_curr
             .expect("Not allowed to create list element outside the list area");
@@ -50,6 +50,7 @@ impl Ui {
         // mv(index as i32, 1);
         // addstr(*todo).unwrap();
         // attroff(COLOR_PAIR(pair));
+        return false;
     }
     fn end_list(&mut self) {
         self.list_curr = None;
@@ -70,7 +71,7 @@ fn main() {
     ];
     let mut quit = false;
     let mut todo_curr: usize = 0;
-    let mut dones :Vec<String> = vec!["heheh".to_string(), "dsbds".to_string()];
+    let mut dones: Vec<String> = vec!["heheh".to_string(), "dsbds".to_string()];
     let mut ui = Ui::default();
     let mut done_curr: usize = 0;
     while !quit {
@@ -80,7 +81,7 @@ fn main() {
             ui.label("TODO ::", REGULAR_PAIR);
             ui.begin_list(todo_curr);
             for (index, todo) in todos.iter().enumerate() {
-                ui.list_element(&format!("- [ ] {}",todo), index);
+                ui.list_element(&format!("- [ ] {}", todo), index);
                 // let pair = {
                 //     if todo_curr == index {
                 //         HIGHLIGHT_PAIR
@@ -98,9 +99,9 @@ fn main() {
             ui.label("----------------------------------", REGULAR_PAIR);
 
             ui.label("DONE ::", REGULAR_PAIR);
-            ui.begin_list(done_curr + 6969);
+            ui.begin_list(0);
             for (index, done) in dones.iter().enumerate() {
-                ui.list_element(&format!(" - [x] {}",done), index + 6969);
+                ui.list_element(&format!("- [x] {}", done), index + 1);
             }
             ui.end_list();
         }
@@ -122,6 +123,11 @@ fn main() {
                     todo_curr = todo_curr + 1
                 } else if todo_curr == todos.len() - 1 {
                     todo_curr = 0;
+                }
+            }
+            '\n' => {
+                if (todo_curr < todos.len()) {
+                    dones.push(todos.remove(todo_curr));
                 }
             }
             // 'd' => {
