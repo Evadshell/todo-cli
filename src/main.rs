@@ -165,11 +165,17 @@ fn main() {
                 Focus::Todo => {
                     if (todo_curr < todos.len()) {
                         dones.push(todos.remove(todo_curr));
+                    if todo_curr>=todos.len() && todos.len() >0 {
+                        todo_curr = todos.len() -1;
+                    }
                     }
                 }
                 Focus::Done => {
                     if (done_curr < dones.len()) {
                         todos.push(dones.remove(done_curr));
+                        if done_curr>=dones.len() && dones.len() >0 {
+                            done_curr = dones.len() -1;
+                        }
                     }
                 }
             },
