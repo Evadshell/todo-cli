@@ -56,6 +56,18 @@ impl Ui {
         self.list_curr = None;
     }
 }
+enum Focus {
+    Todo,
+    Done,
+}
+impl Focus {
+    fn toggle(&self) -> Self {
+        match self {
+            Focus::Done => Focus::Todo,
+            Focus::Todo => Focus::Done,
+        }
+    }
+}
 fn main() {
     initscr();
     noecho();
@@ -63,7 +75,7 @@ fn main() {
     start_color();
     init_pair(REGULAR_PAIR, COLOR_WHITE, COLOR_BLACK);
     init_pair(HIGHLIGHT_PAIR, COLOR_BLACK, COLOR_WHITE);
-
+    let mut focus = Focus::Todo;
     let mut todos = vec![
         "make a todo".to_string(),
         "learn rust".to_string(),
@@ -76,34 +88,38 @@ fn main() {
     let mut done_curr: usize = 0;
     while !quit {
         // addstr("TODO :");
+        erase();
         ui.begin(0, 0);
         {
-            ui.label("TODO ::", REGULAR_PAIR);
-            ui.begin_list(todo_curr);
-            for (index, todo) in todos.iter().enumerate() {
-                ui.list_element(&format!("- [ ] {}", todo), index);
-                // let pair = {
-                //     if todo_curr == index {
-                //         HIGHLIGHT_PAIR
-                //     } else {
-                //         REGULAR_PAIR
-                //     }
-                // };
-                // attron(COLOR_PAIR(pair));
-                // mv(index as i32, 1);
-                // addstr(*todo).unwrap();
-                // attroff(COLOR_PAIR(pair));
+            match focus {
+                Focus::Todo => {
+                    ui.label("TODO ::", REGULAR_PAIR);
+                    ui.begin_list(todo_curr);
+                    for (index, todo) in todos.iter().enumerate() {
+                        ui.list_element(&format!("- [ ] {}", todo), index);
+                        // let pair = {
+                        //     if todo_curr == index {
+                        //         HIGHLIGHT_PAIR
+                        //     } else {
+                        //         REGULAR_PAIR
+                        //     }
+                        // };
+                        // attron(COLOR_PAIR(pair));
+                        // mv(index as i32, 1);
+                        // addstr(*todo).unwrap();
+                        // attroff(COLOR_PAIR(pair));
+                    }
+                    ui.end_list();
+                }
+                Focus::Done => {
+                    ui.label("DONE ::", REGULAR_PAIR);
+                    ui.begin_list(done_curr);
+                    for (index, done) in dones.iter().enumerate() {
+                        ui.list_element(&format!("- [x] {}", done), index);
+                    }
+                    ui.end_list();
+                }
             }
-            ui.end_list();
-
-            ui.label("----------------------------------", REGULAR_PAIR);
-
-            ui.label("DONE ::", REGULAR_PAIR);
-            ui.begin_list(0);
-            for (index, done) in dones.iter().enumerate() {
-                ui.list_element(&format!("- [x] {}", done), index + 1);
-            }
-            ui.end_list();
         }
         ui.end();
         refresh();
@@ -112,24 +128,52 @@ fn main() {
             'q' => quit = true,
             // _ => {addstr(key as u8 as ch).unwrap()}
             'w' => {
-                if todo_curr > 0 {
-                    todo_curr = todo_curr - 1
-                } else if todo_curr == 0 {
-                    todo_curr = todos.len() - 1;
+                match focus {
+                    Focus::Done => {
+                        if done_curr > 0 {
+                            done_curr = done_curr - 1
+                        }
+                    }
+                    Focus::Todo => {
+                        if todo_curr > 0 {
+                            todo_curr = todo_curr - 1
+                        }
+                    }
                 }
+                // else if todo_curr == 0 {
+                //     todo_curr = todos.len() - 1;
+                // }
             }
             's' => {
-                if todo_curr < todos.len() - 1 {
-                    todo_curr = todo_curr + 1
-                } else if todo_curr == todos.len() - 1 {
-                    todo_curr = 0;
+                match focus {
+                    Focus::Todo => {
+                        if todo_curr + 1 < todos.len() {
+                            todo_curr = todo_curr + 1
+                        }
+                    }
+                    Focus::Done => {
+                        if done_curr + 1 < dones.len() {
+                            done_curr = done_curr + 1
+                        }
+                    }
                 }
+                // else if todo_curr == todos.len() - 1 {
+                //     todo_curr = 0;
+                // }
             }
-            '\n' => {
-                if (todo_curr < todos.len()) {
-                    dones.push(todos.remove(todo_curr));
+            '\n' => match focus {
+                Focus::Todo => {
+                    if (todo_curr < todos.len()) {
+                        dones.push(todos.remove(todo_curr));
+                    }
                 }
-            }
+                Focus::Done => {
+                    if (done_curr < dones.len()) {
+                        todos.push(dones.remove(done_curr));
+                    }
+                }
+            },
+            '\t' => focus = focus.toggle(),
             // 'd' => {
             //     done.push(todos[todo_curr]);
             //     todos.remove(todo_curr);
