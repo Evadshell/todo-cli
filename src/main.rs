@@ -1,6 +1,8 @@
-#![allow(unused)]
 extern crate ncurses;
 use ncurses::*;
+use std::fs::File;
+use std::io::{self, BufRead, Write};
+use std::{env, process};
 const REGULAR_PAIR: i16 = 0;
 const HIGHLIGHT_PAIR: i16 = 1;
 type Id = usize;
@@ -23,7 +25,7 @@ impl Ui {
     fn label(&mut self, text: &str, pair: i16) {
         mv(self.row as i32, self.col as i32);
         attron(COLOR_PAIR(pair));
-        addstr(text);
+        addstr(text).unwrap();
         attroff(COLOR_PAIR(pair));
         self.row += 1;
 
@@ -56,6 +58,7 @@ impl Ui {
         self.list_curr = None;
     }
 }
+#[derive(Debug)]
 enum Focus {
     Todo,
     Done,
@@ -68,24 +71,62 @@ impl Focus {
         }
     }
 }
+fn parse_item(line: &str) -> Option<(Focus, &str)> {
+    let todo_prefix = "TODO: ";
+    let done_prefix = "TODO: ";
+    if line.starts_with(todo_prefix) {
+        return Some((Focus::Todo, &line[todo_prefix.len()..]));
+    }
+    if line.starts_with(done_prefix) {
+        return Some((Focus::Done, &line[done_prefix.len()..]));
+    } else {
+        None
+    }
+}
 fn main() {
+    let mut args = env::args();
+    args.next().unwrap();
+    let file_path = match args.next() {
+        Some(file_path) => file_path,
+        None => {
+            eprintln!("ERROR: file path not provided");
+            process::exit(1)
+        }
+    };
+    let mut focus = Focus::Todo;
+
+    let mut todos = Vec::<String>::new();
+
+    let mut quit = false;
+    let mut todo_curr: usize = 0;
+    let mut dones = Vec::<String>::new();
+    let mut ui = Ui::default();
+    let mut done_curr: usize = 0;
+    {
+        let file = File::open(file_path.clone()).unwrap();
+        for (index, line) in io::BufReader::new(file).lines().enumerate() {
+            match parse_item(&line.unwrap()) {
+                Some((Focus::Todo, title)) => {
+                    todos.push(title.to_string());
+                }
+
+                Some((Focus::Done, title)) => {
+                    dones.push(title.to_string());
+                }
+                None => {
+                    eprintln!("{} {} ill formed line item ", file_path, index + 1);
+                    process::exit(1)
+                }
+            }
+        }
+    }
     initscr();
     noecho();
     curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
     start_color();
     init_pair(REGULAR_PAIR, COLOR_WHITE, COLOR_BLACK);
     init_pair(HIGHLIGHT_PAIR, COLOR_BLACK, COLOR_WHITE);
-    let mut focus = Focus::Todo;
-    let mut todos = vec![
-        "make a todo".to_string(),
-        "learn rust".to_string(),
-        "muheuehueh".to_string(),
-    ];
-    let mut quit = false;
-    let mut todo_curr: usize = 0;
-    let mut dones: Vec<String> = vec!["heheh".to_string(), "dsbds".to_string()];
-    let mut ui = Ui::default();
-    let mut done_curr: usize = 0;
+
     while !quit {
         // addstr("TODO :");
         erase();
@@ -144,6 +185,15 @@ fn main() {
                 //     todo_curr = todos.len() - 1;
                 // }
             }
+            // 'e' => {
+            //     let mut file = File::create("TODO").unwrap();
+            //     for todo in todos.iter() {
+            //         writeln!(file, "TODO : {}", todo);
+            //     }
+            //     for done in dones.iter() {
+            //         writeln!(file, "DONE : {}", done);
+            //     }
+            // }
             's' => {
                 match focus {
                     Focus::Todo => {
@@ -163,18 +213,18 @@ fn main() {
             }
             '\n' => match focus {
                 Focus::Todo => {
-                    if (todo_curr < todos.len()) {
+                    if todo_curr < todos.len() {
                         dones.push(todos.remove(todo_curr));
-                    if todo_curr>=todos.len() && todos.len() >0 {
-                        todo_curr = todos.len() -1;
-                    }
+                        if todo_curr >= todos.len() && todos.len() > 0 {
+                            todo_curr = todos.len() - 1;
+                        }
                     }
                 }
                 Focus::Done => {
-                    if (done_curr < dones.len()) {
+                    if done_curr < dones.len() {
                         todos.push(dones.remove(done_curr));
-                        if done_curr>=dones.len() && dones.len() >0 {
-                            done_curr = dones.len() -1;
+                        if done_curr >= dones.len() && dones.len() > 0 {
+                            done_curr = dones.len() - 1;
                         }
                     }
                 }
